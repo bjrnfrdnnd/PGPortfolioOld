@@ -96,5 +96,6 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - pip:
     - pillow==6.2.0
+    - seaborn==0.9.0
     - tflearn==0.3.2
 
