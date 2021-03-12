@@ -3,9 +3,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tflearn
-
+tf.disable_v2_behavior()
 
 class NeuralNetWork:
     def __init__(self, feature_number, rows, columns, layers, device):
