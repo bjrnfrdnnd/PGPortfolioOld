@@ -91,15 +91,20 @@ class Trader:
         omega = self._agent.decide_by_history(self.generate_history_matrix(),
                                               self._last_omega.copy())
         self.trade_by_strategy(omega)
+        trading_time = time.time() - starttime
+        logging.info(f"trading time: {trading_time}")
         if self._agent_type == "nn":
+            starttime = time.time()
             self.rolling_train()
+            training_time = time.time() - starttime
+            logging.info(f"training time: {training_time}")
         if not self.__class__.__name__=="BackTest":
             self._last_omega = omega.copy()
         logging.info('total assets are %3f BTC' % self._total_capital)
         logging.debug("="*30)
-        trading_time = time.time() - starttime
         if trading_time < self._period:
             logging.info("sleep for %s seconds" % (self._period - trading_time))
+
         self._steps += 1
         return self._period - trading_time
 

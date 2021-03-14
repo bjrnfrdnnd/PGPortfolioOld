@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import numpy as np
+import pandas as pd
 from pgportfolio.trade import trader
 from pgportfolio.marketdata.datamatrices import DataMatrices
 import logging
@@ -68,8 +69,22 @@ class BackTest(trader.Trader):
         return inputs
 
     def trade_by_strategy(self, omega):
-        logging.info("the step is {}".format(self._steps))
-        logging.debug("the raw omega is {}".format(omega))
+
+        s = f"the step is {self._steps}"
+        try:
+            global_end_t = pd.to_datetime(self._rolling_trainer.data_matrices._end, unit='s')
+            ix_end_from_global_end = self._total_steps - self._steps
+            ix_start_from_global_end = self._total_steps - self._steps + self._window_size
+            end_t = global_end_t - pd.Timedelta(
+                value=ix_end_from_global_end * self._rolling_trainer._matrix._period_length, unit='s')
+            start_t = global_end_t - pd.Timedelta(
+                value=ix_start_from_global_end * self._rolling_trainer._matrix._period_length, unit='s')
+            duration_td = end_t - start_t
+            s = s + f"; start: {start_t}; end: {end_t}; duration: {duration_td}"
+        except Exception as e:
+            pass
+        logging.info(s)
+        logging.info(f"the raw omega is {omega}")
         future_price = np.concatenate((np.ones(1), self.__get_matrix_y()))
         pv_after_commission = calculate_pv_after_commission(omega, self._last_omega, self._commission_rate)
         portfolio_change = pv_after_commission * np.dot(omega, future_price)
@@ -77,6 +92,7 @@ class BackTest(trader.Trader):
         self._last_omega = pv_after_commission * omega * \
                            future_price /\
                            portfolio_change
-        logging.debug("the portfolio change this period is : {}".format(portfolio_change))
+        logging.debug(f"the portfolio this period is value: {self._total_capital}; change: {portfolio_change}")
         self.__test_pc_vector.append(portfolio_change)
+
 

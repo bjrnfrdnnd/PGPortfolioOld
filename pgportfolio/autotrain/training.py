@@ -46,6 +46,9 @@ def train_all(processes=1, device="cpu"):
     else:
         console_level = logging.WARNING
         logfile_level = logging.INFO
+        console_level = logging.INFO
+        logfile_level = logging.DEBUG
+
     train_dir = "train_package"
     if not os.path.exists("./" + train_dir): #if the directory does not exist, creates one
         os.makedirs("./" + train_dir)

@@ -34,6 +34,7 @@ class DataMatrices:
         """
         start = int(start)
         self.__end = int(end)
+        self._end = int(end)
 
         # assert window_size >= MIN_NUM_PERIOD
         self.__coin_no = coin_filter
@@ -52,6 +53,7 @@ class DataMatrices:
         else:
             raise ValueError("market {} is not valid".format(market))
         self.__period_length = period
+        self._period_length = period
         # portfolio vector memory, [time, assets]
         panelxr = self.__global_data
         self.__PVM = pd.DataFrame(index=panelxr.dim_2.values,
@@ -197,3 +199,4 @@ class DataMatrices:
         self._train_ind = list(self._train_ind)
         self._num_train_samples = len(self._train_ind)
         self._num_test_samples = len(self.test_indices)
+

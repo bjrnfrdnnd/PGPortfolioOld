@@ -161,9 +161,9 @@ def _load_from_summary(index, config):
     @:param index: index of the training and backtest
     @:return: numpy array of the portfolio changes
     """
-    dataframe = pd.DataFrame.from_csv("./train_package/train_summary.csv")
-    history_string = dataframe.loc[int(index)]["backtest_test_history"]
-    if not check_input_same(config, json.loads(dataframe.loc[int(index)]["config"])):
+    dataframe = pd.read_csv("./train_package/train_summary.csv")
+    history_string = dataframe.loc[int(index) - 1, "backtest_test_history"]
+    if not check_input_same(config, json.loads(dataframe.loc[int(index) - 1, "config"])):
         raise ValueError("the date of this index is not the same as the default config")
     return np.fromstring(history_string, sep=",")[:-1]
 
