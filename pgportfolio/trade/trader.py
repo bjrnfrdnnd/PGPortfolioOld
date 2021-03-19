@@ -32,7 +32,7 @@ class Trader:
         self._agent = agent
 
         # the total assets is calculated with BTC
-        self._total_capital = initial_BTC
+        self.btc = initial_BTC
         self._window_size = config["input"]["window_size"]
         self._coin_number = config["input"]["coin_number"]
         self._commission_rate = config["trading"]["trading_consumption"]

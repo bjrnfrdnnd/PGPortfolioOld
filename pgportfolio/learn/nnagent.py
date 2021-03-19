@@ -20,6 +20,7 @@ class NNAgent:
         self.__y = tf.placeholder(tf.float32, shape=[None,
                                                      self.__config["input"]["feature_number"],
                                                      self.__coin_number])
+        # 0 to take the close price
         self.__future_price = tf.concat([tf.ones([self.__net.input_num, 1]),
                                        self.__y[:, 0, :]], 1)
         self.__future_omega = (self.__future_price * self.__net.output) /\
@@ -28,10 +29,17 @@ class NNAgent:
         self.__commission_ratio = self.__config["trading"]["trading_consumption"]
         self.__pv_vector = tf.concat([tf.ones(1),
                                       tf.reduce_sum(self.__net.output * self.__future_price, axis=1)[:-1] *
-                                      self.__pure_pc()], axis=0)
+                                      self.__pure_pc()], axis=0, name='pv_vector')
+        self.__delta_x = tf.concat([tf.zeros([self.net.input_num, 1]),
+                   self.net.input_tensor[:, 0, :, -1] - self.net.input_tensor[:, 0, :, -2]], axis=1)
+        self.__pv_vector2 = tf.concat([tf.ones(1),
+                                      tf.reduce_sum(self.__net.output * self.__delta_x, axis=1)[:-1] *
+                                      self.__pure_pc2()], axis=0, name='pv_vector2')
         self.__log_mean_free = tf.reduce_mean(tf.log(tf.reduce_sum(self.__net.output * self.__future_price,
                                                                    reduction_indices=[1])))
-        self.__portfolio_value = tf.reduce_prod(self.__pv_vector)
+        self.__portfolio_value = tf.reduce_prod(self.__pv_vector, name='portfolio_value')
+        self.__portfolio_value2 = tf.reduce_prod(self.__pv_vector2, name='portfolio_value2')
+
         self.__mean = tf.reduce_mean(self.__pv_vector)
         self.__log_mean = tf.reduce_mean(tf.log(self.__pv_vector))
         self.__standard_deviation = tf.sqrt(tf.reduce_mean((self.__pv_vector - self.__mean) ** 2))
@@ -80,6 +88,10 @@ class NNAgent:
         return self.__portfolio_value
 
     @property
+    def portfolio_value2(self):
+        return self.__portfolio_value2
+
+    @property
     def loss(self):
         return self.__loss
 
@@ -87,9 +99,22 @@ class NNAgent:
     def layers_dict(self):
         return self.__net.layers_dict
 
+    @property
+    def net(self):
+        return self.__net
+
+    @property
+    def y(self):
+        return self.__y
+
+    @property
+    def delta_x(self):
+        return self.__delta_x
+
     def recycle(self):
         tf.reset_default_graph()
         self.__net.session.close()
+
 
     def __set_loss_function(self):
         def loss_function4():
@@ -166,11 +191,11 @@ class NNAgent:
         assert not np.any(np.isnan(y))
         assert not np.any(np.isnan(last_w)),\
             "the last_w is {}".format(last_w)
-        results = self.__net.session.run(tensors,
-                                         feed_dict={self.__net.input_tensor: x,
-                                                    self.__y: y,
-                                                    self.__net.previous_w: last_w,
-                                                    self.__net.input_num: x.shape[0]})
+        feed_dict = {self.net.input_tensor: x,
+                                                    self.y: y,
+                                                    self.net.previous_w: last_w,
+                                                    self.net.input_num: x.shape[0]}
+        results = self.net.session.run(tensors, feed_dict=feed_dict)
         setw(results[-1][:, 1:])
         return results[:-1]
 
@@ -183,7 +208,7 @@ class NNAgent:
         c = self.__commission_ratio
         w_t = self.__future_omega[:self.__net.input_num-1]  # rebalanced
         w_t1 = self.__net.output[1:self.__net.input_num]
-        mu = 1 - tf.reduce_sum(tf.abs(w_t1[:, 1:]-w_t[:, 1:]), axis=1)*c
+        mu = 1 - tf.reduce_sum(tf.abs(w_t1[:, 1:]-w_t[:, 1:]), axis=1, name='mu')*c
         """
         mu = 1-3*c+c**2
 
@@ -201,6 +226,30 @@ class NNAgent:
             mu = recurse(mu)
         """
         return mu
+
+    # consumption vector (on each periods)
+    def __pure_pc2(self):
+        c = self.__commission_ratio
+        w_t = self.__future_omega[:self.__net.input_num-1]  # rebalanced
+        w_t1 = self.__net.output[1:self.__net.input_num]
+        mu2 = 1 - tf.reduce_sum(tf.abs(w_t1[:, 1:]-w_t[:, 1:]), axis=1, name='mu2')*c
+        """
+        mu = 1-3*c+c**2
+
+        def recurse(mu0):
+            factor1 = 1/(1 - c*w_t1[:, 0])
+            if isinstance(mu0, float):
+                mu0 = mu0
+            else:
+                mu0 = mu0[:, None]
+            factor2 = 1 - c*w_t[:, 0] - (2*c - c**2)*tf.reduce_sum(
+                tf.nn.relu(w_t[:, 1:] - mu0 * w_t1[:, 1:]), axis=1)
+            return factor1*factor2
+
+        for i in range(20):
+            mu = recurse(mu)
+        """
+        return mu2
 
     # the history is a 3d matrix, return a asset vector
     def decide_by_history(self, history, last_w):

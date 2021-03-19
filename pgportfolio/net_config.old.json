@@ -24,7 +24,7 @@
     "test_portion":0.03,
     "online":false,
     "start_date":"2015/01/01",
-    "end_date":"2017/01/01",
+    "end_date":"2015/07/01",
     "volume_average_days":30
   },
 

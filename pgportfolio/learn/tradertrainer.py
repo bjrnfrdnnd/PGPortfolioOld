@@ -147,9 +147,10 @@ class TraderTrainer:
         return batch_input, batch_y, batch_last_w, batch_w
 
     def __init_tensor_board(self, log_file_dir):
-        tf.summary.scalar('benefit', self._agent.portfolio_value)
+        tf.summary.scalar('benefitt', self._agent.portfolio_value)
+        tf.summary.scalar('benefitt2', self._agent.portfolio_value2)
         tf.summary.scalar('log_mean', self._agent.log_mean)
-        tf.summary.scalar('loss', self._agent.loss)
+        tf.summary.scalar('losss', self._agent.loss)
         tf.summary.scalar("log_mean_free", self._agent.log_mean_free)
         for layer_key in self._agent.layers_dict:
             tf.summary.histogram(layer_key, self._agent.layers_dict[layer_key])

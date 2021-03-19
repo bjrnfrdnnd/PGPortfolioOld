@@ -170,6 +170,7 @@ class DataMatrices:
         M = [self.get_submatrix(index) for index in indexs]
         M = np.array(M)
         X = M[:, :, :, :-1]
+        # last entry in window divided by close values of next-to-last
         y = M[:, :, :, -1] / M[:, 0, None, :, -2]
         return {"X": X, "y": y, "last_w": last_w, "setw": setw}
 
